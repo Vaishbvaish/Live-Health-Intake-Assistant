@@ -1,4 +1,5 @@
 import React from 'react';
+import { token } from '../utils/theme';
 import { BodyLocation } from '../types/clinical';
 
 interface AnatomicalMapProps {
@@ -18,8 +19,8 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
 
   const getColor = (loc: BodyLocation) => {
     const active = isLocationActive(loc);
-    if (!active) return '#1A2333';
-    return hasEmergency ? '#EF4444' : '#0062FF';
+    if (!active) return token('--color-surface-sunken');
+    return hasEmergency ? token('--color-critical') : token('--color-accent');
   };
 
   const getGlow = (loc: BodyLocation) => {
@@ -29,10 +30,10 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center p-3 rounded-2xl bg-[#0B0F19]/60 border border-white/5">
-      <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between w-full px-1">
+    <div className="relative flex flex-col items-center justify-center p-3 rounded-2xl bg-canvas/60 border border-white/5">
+      <div className="text-[11px] font-medium text-ink-soft uppercase tracking-wider mb-2 flex items-center justify-between w-full px-1">
         <span>Anatomical Map</span>
-        <span className="text-[10px] text-slate-500 font-mono">
+        <span className="text-[10px] text-ink-dim font-mono">
           {activeLocations.length} active region{activeLocations.length !== 1 ? 's' : ''}
         </span>
       </div>
@@ -44,8 +45,8 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
       >
         <defs>
           <radialGradient id="electricGlowGrad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#0062FF" stopOpacity="0.8" />
-            <stop offset="100%" stopColor="#0062FF" stopOpacity="0" />
+            <stop offset="0%" stopColor={token('--color-accent')} stopOpacity="0.8" />
+            <stop offset="100%" stopColor={token('--color-accent')} stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -60,11 +61,11 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
             cy="26"
             r="16"
             fill={getColor('head')}
-            stroke={isLocationActive('head') ? '#ffffff' : '#2A364E'}
+            stroke={isLocationActive('head') ? '#ffffff' : token('--color-hairline-strong')}
             strokeWidth="1.5"
           />
           {isLocationActive('head') && (
-            <circle cx="80" cy="26" r="20" fill="none" stroke="#0062FF" strokeWidth="1" strokeDasharray="3 3" opacity="0.8" className="animate-spin origin-[80px_26px]" />
+            <circle cx="80" cy="26" r="20" fill="none" stroke={token('--color-accent')} strokeWidth="1" strokeDasharray="3 3" opacity="0.8" className="animate-spin origin-[80px_26px]" />
           )}
         </g>
 
@@ -81,7 +82,7 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
             height="8"
             rx="2"
             fill={getColor('neck')}
-            stroke={isLocationActive('neck') ? '#ffffff' : '#2A364E'}
+            stroke={isLocationActive('neck') ? '#ffffff' : token('--color-hairline-strong')}
             strokeWidth="1.5"
           />
         </g>
@@ -95,7 +96,7 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           <path
             d="M 64 53 L 96 53 L 98 84 L 62 84 Z"
             fill={getColor('chest')}
-            stroke={isLocationActive('chest') ? '#ffffff' : '#2A364E'}
+            stroke={isLocationActive('chest') ? '#ffffff' : token('--color-hairline-strong')}
             strokeWidth="1.5"
             rx="4"
           />
@@ -113,7 +114,7 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           <path
             d="M 63 87 L 97 87 L 94 122 L 66 122 Z"
             fill={getColor('abdomen')}
-            stroke={isLocationActive('abdomen') ? '#ffffff' : '#2A364E'}
+            stroke={isLocationActive('abdomen') ? '#ffffff' : token('--color-hairline-strong')}
             strokeWidth="1.5"
           />
         </g>
@@ -127,7 +128,7 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           <path
             d="M 66 123 L 94 123 L 88 140 L 72 140 Z"
             fill={getColor('pelvis')}
-            stroke={isLocationActive('pelvis') ? '#ffffff' : '#2A364E'}
+            stroke={isLocationActive('pelvis') ? '#ffffff' : token('--color-hairline-strong')}
             strokeWidth="1.5"
           />
         </g>
@@ -141,7 +142,7 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           <path
             d="M 60 55 L 42 95 L 36 142 L 42 143 L 50 98 L 62 64 Z"
             fill={getColor('limbs')}
-            stroke={isLocationActive('limbs') ? '#ffffff' : '#2A364E'}
+            stroke={isLocationActive('limbs') ? '#ffffff' : token('--color-hairline-strong')}
             strokeWidth="1.5"
           />
         </g>
@@ -155,7 +156,7 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           <path
             d="M 100 55 L 118 95 L 124 142 L 118 143 L 110 98 L 98 64 Z"
             fill={getColor('limbs')}
-            stroke={isLocationActive('limbs') ? '#ffffff' : '#2A364E'}
+            stroke={isLocationActive('limbs') ? '#ffffff' : token('--color-hairline-strong')}
             strokeWidth="1.5"
           />
         </g>
@@ -169,7 +170,7 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           <path
             d="M 70 142 L 67 195 L 65 242 L 74 242 L 77 195 L 78 142 Z"
             fill={getColor('limbs')}
-            stroke={isLocationActive('limbs') ? '#ffffff' : '#2A364E'}
+            stroke={isLocationActive('limbs') ? '#ffffff' : token('--color-hairline-strong')}
             strokeWidth="1.5"
           />
         </g>
@@ -183,7 +184,7 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           <path
             d="M 82 142 L 83 195 L 86 242 L 95 242 L 93 195 L 90 142 Z"
             fill={getColor('limbs')}
-            stroke={isLocationActive('limbs') ? '#ffffff' : '#2A364E'}
+            stroke={isLocationActive('limbs') ? '#ffffff' : token('--color-hairline-strong')}
             strokeWidth="1.5"
           />
         </g>
@@ -199,9 +200,9 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
               className={`px-2 py-0.5 text-[10px] font-medium rounded cursor-pointer transition-all ${
                 active
                   ? hasEmergency
-                    ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
-                    : 'bg-[#0062FF]/20 text-blue-300 border border-[#0062FF]/40'
-                  : 'bg-white/[0.03] text-slate-500 hover:text-slate-300 border border-transparent'
+                    ? 'bg-critical/20 text-critical border border-critical/40'
+                    : 'bg-accent/20 text-accent-tint border border-accent/40'
+                  : 'bg-white/[0.03] text-ink-dim hover:text-ink-muted border border-transparent'
               }`}
             >
               {loc.toUpperCase()}

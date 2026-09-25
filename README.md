@@ -3,14 +3,23 @@
 > **Network Science (NSOFFICE.AI) Internship Assignment**  
 > **Project 5: Live Health Intake Assistant — Healthcare**
 
-An end-to-end real-time AI voice intake companion built with the **Gemini API**. A patient describes their symptoms out loud before a consultation; the assistant listens attentively, asks natural follow-up questions to fill in clinical diagnostic gaps, and dynamically invokes **clinical tools mid-conversation** to produce an instant, structured SOAP summary note for the consulting physician.
+An end-to-end real-time AI voice intake companion built on the **Gemini Live API**. A patient describes their symptoms out loud before a consultation; the assistant listens attentively, asks natural follow-up questions to fill in clinical diagnostic gaps, and dynamically invokes **clinical tools mid-conversation** to produce an instant, structured SOAP summary note for the consulting physician.
+
+### Models
+
+| Use | Model |
+| --- | --- |
+| Real-time voice conversation (audio-to-audio, WebSocket) | `gemini-3.1-flash-live-preview` |
+| Turn-based SOAP note synthesis | `gemini-3-flash-preview` |
+
+Both run on the Google AI Studio free tier. No billing needs to be enabled.
 
 ---
 
 ## 🌟 Key Highlights
 
-- **Real-Time Voice Dialogue**: Speak aloud or listen to natural vocal responses. Supports live continuous speech recognition, barge-in interruptions, and dynamic audio waveform visualizer.
-- **Mid-Conversation Tool Calling (Core Showcase)**: Rather than acting as a static chatbot, the assistant calls structured Gemini tools in real-time as the patient speaks:
+- **Genuine Live API Voice Dialogue**: Not speech-to-text bolted onto a text model. The browser streams 16 kHz PCM microphone audio over a Live API WebSocket and plays back the model's own 24 kHz speech, with real barge-in — talk over the assistant and it stops mid-sentence. The waveform visualizer is driven by the actual microphone signal.
+- **Mid-Conversation Tool Calling (Core Showcase)**: Rather than acting as a static chatbot, the assistant calls structured Gemini tools over the live socket while the patient is still speaking:
   - `record_symptom`: Extracts symptom name, anatomical region, severity rating (1–10), onset, duration, character, and radiation.
   - `flag_triage_red_flag`: Alarms critical emergency symptoms (e.g., crushing chest pain radiating to jaw, severe sudden headache, respiratory distress) with clinical rationale and STAT actions.
   - `record_patient_history`: Captures allergies, active medications, chronic conditions, and past surgeries.
@@ -23,63 +32,109 @@ An end-to-end real-time AI voice intake companion built with the **Gemini API**.
   - **A (Assessment)**: Differential diagnoses with clinical probabilities.
   - **P (Plan)**: Suggested diagnostic lab orders (e.g. 12-lead ECG, Troponin, CT, CBC), physician examination checklist.
   - Export to Markdown (EHR format) or Print/PDF.
-- **NSOffice Glass UI System**:
-  - **Accent Color**: Electric Blue (`#0062FF`).
-  - **Typography**: DM Sans throughout.
-  - **Spacing**: Apple-style breathing room and liquid glass frosted panels (`backdrop-blur-xl`).
-  - **Interaction Discipline**: One clear primary action per view.
+- **NSOffice Glass UI System** — all tokens live in one place, the `@theme`
+  block at the top of [`src/index.css`](src/index.css). No component references
+  a raw Tailwind palette colour or a hex literal.
+  - **One accent colour**: Electric Blue (`#0062FF`). Every interactive,
+    branded or emphasised element uses it — buttons, tabs, focus rings, the
+    waveform, links, success ticks and the routine triage state.
+  - **Status colours are signal, never style**: `critical` and `caution`
+    (Apple's dark-mode system red/amber) appear *only* on clinical severity —
+    red-flag findings, triage urgency, high symptom scores, allergy warnings —
+    and on system failure. They never touch chrome. A routine, low-severity
+    state is Electric Blue, because "nothing is wrong" is not a warning.
+  - **Typography**: DM Sans throughout, with JetBrains Mono reserved for
+    tabular data (timestamps, tool names, IDs).
+  - **Spacing**: Apple-style breathing room, liquid-glass frosted panels
+    (`backdrop-blur-xl`) via the `.glass-panel` family.
+  - **One primary action per view**: enforced by the `.ns-btn-primary` /
+    `.ns-btn-secondary` / `.ns-btn-ghost` primitives. In the intake view the
+    microphone is primary while the session runs and the handoff button is
+    secondary; once the session ends with data, the two swap, so exactly one
+    filled button is ever on screen.
+  - **JS-drawn surfaces** (the anatomical SVG and the canvas waveform) read the
+    same tokens at runtime through [`src/utils/theme.ts`](src/utils/theme.ts),
+    so the palette has a single source of truth.
 
 ---
 
 ## 🚀 Quick Start (Local Setup)
 
 ### 1. Prerequisites
-- **Node.js** (v18 or higher)
-- **npm** or **yarn**
-- A **Gemini API Key** from [Google AI Studio](https://aistudio.google.com/)
+- **Node.js** v20 or newer
+- **npm**
+- A **Gemini API key** from [Google AI Studio](https://aistudio.google.com/) (free tier; no billing required)
+- **Chrome** — the live voice path needs `AudioWorklet` and `getUserMedia`
 
-### 2. Clone and Install
+### 2. Clone and install
 ```bash
-git clone https://github.com/<your-username>/nsoffice-health-intake.git
-cd nsoffice-health-intake
+git clone https://github.com/Vaishbvaish/Live-Health-Intake-Assistant.git
+cd Live-Health-Intake-Assistant
 npm install
 ```
 
-### 3. Configure Environment Variables
-Copy `.env.example` to `.env`:
+### 3. Configure environment variables
 ```bash
 cp .env.example .env
 ```
-Edit `.env` and add your Gemini API key:
-```env
-GEMINI_API_KEY="AIzaSy..."
-APP_URL="http://localhost:3000"
-```
 
-> **Note**: `.env` is already included in `.gitignore` and will never be committed to source control.
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `GEMINI_API_KEY` | **yes** | — | Server-side key. Never sent to the browser. |
+| `GEMINI_VAD_SILENCE_MS` | no | `900` | Silence before the assistant decides the patient finished speaking. Lower is snappier; too low and it talks over people. |
+| `GEMINI_LIVE_MODEL` | no | `gemini-3.1-flash-live-preview` | Live API model for the voice conversation. |
+| `GEMINI_TEXT_MODEL` | no | `gemini-3-flash-preview` | Turn-based model for SOAP synthesis. |
+| `PORT` | no | `3000` | Local dev server port. |
 
-### 4. Run Development Server
+> `.env` is matched by `.gitignore` and is never committed.
+
+### 4. Run it
 ```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open <http://localhost:3000>, click the microphone, and wait for the status pill
+to read **Microphone Live** before speaking.
+
+Other commands:
+```bash
+npm run build   # production build into dist/
+npm run lint    # typecheck (tsc --noEmit)
+```
 
 ---
 
-## ☁️ Deployment (Vercel)
+## ☁️ Deployment (Vercel, free tier)
 
-1. Push your repository to GitHub:
+The app is deliberately structured so it needs **no always-on server**. The
+realtime connection is browser-to-Gemini over a WebSocket, authorised by a
+short-lived token, so the only backend is two stateless functions:
+
+```
+api/live/token.ts       mints the single-use Live API ephemeral token
+api/intake/handoff.ts   compiles the physician SOAP note
+lib/clinical.ts         tool declarations + system prompt, shared by both
+                        the functions and the local dev server
+```
+
+`server.ts` is local development only — Vercel never runs it.
+
+1. **Push to GitHub** (the repo must be public for the assignment):
    ```bash
    git add .
-   git commit -m "feat: complete NSOffice Live Health Intake Assistant"
-   git branch -M main
-   git remote add origin https://github.com/<your-username>/nsoffice-health-intake.git
-   git push -u origin main
+   git commit -m "feat: NSOffice Live Health Intake Assistant"
+   git push origin main
    ```
-2. Import the repository in [Vercel](https://vercel.com).
-3. In **Settings > Environment Variables**, add:
-   - `GEMINI_API_KEY`: Your Gemini API key from Google AI Studio.
-4. Click **Deploy**. Vercel will build and host the live public application URL.
+2. **Import the repo** at [vercel.com/new](https://vercel.com/new). The Vite
+   preset and `api/` functions are picked up from `vercel.json`; no build
+   settings need changing.
+3. **Add the environment variable** under **Settings → Environment Variables**:
+   - `GEMINI_API_KEY` = your AI Studio key (apply to Production, Preview and Development)
+4. **Deploy.** Then open the URL, click the microphone and grant access —
+   `getUserMedia` requires HTTPS, which Vercel provides automatically.
+
+> If the build fails on function duration, lower `functions["api/**/*.ts"].maxDuration`
+> in `vercel.json` to whatever your plan allows. SOAP synthesis usually
+> finishes in 10-20s.
 
 ---
 
@@ -92,28 +147,40 @@ To help reviewers and clients test immediately even without a microphone:
 4. **Acute Dyspnea & Bronchospasm (Respiratory / Asthma Flare)**
 5. **Lumbar Strain with Sciatic Radiculopathy (Musculoskeletal)**
 
-Click any scenario at the top of the conversation stream to simulate the patient's voice intake in one tap!
+Press the microphone button once to open the live session, then click any
+scenario at the top of the conversation stream to send it as a patient turn.
+If the microphone is unavailable or denied, the session still opens in
+text-only mode so the scenarios and the typed input remain usable.
 
 ---
 
 ## 📂 Project Architecture
 
 ```
-├── server.ts                   # Express server with Gemini 3.8 Flash tool calling & TTS
+├── api/                        # Vercel serverless functions (production backend)
+│   ├── live/token.ts               # Mints the single-use Live API ephemeral token
+│   └── intake/handoff.ts           # Compiles the physician SOAP note
+├── lib/
+│   └── clinical.ts             # Tool declarations, system prompt & service calls,
+│                               # shared by the functions and the dev server
+├── server.ts                   # Local dev only: Vite middleware + the same routes
+├── vercel.json                 # Vite preset, function config, SPA rewrite
 ├── src/
 │   ├── components/
 │   │   ├── Header.tsx                 # NSOffice branded header & triage status
 │   │   ├── DialogueStream.tsx         # Voice dialogue, tool call badges, & mic toggle
 │   │   ├── ClinicalExtractionPanel.tsx # Live auto-updating clinical feed & vitals
 │   │   ├── AnatomicalMap.tsx          # Interactive SVG anatomical symptom locator
-│   │   ├── VoiceVisualizer.tsx        # Canvas audio waveform spectrum visualizer
+│   │   ├── VoiceVisualizer.tsx        # Canvas waveform driven by real mic amplitude
 │   │   └── DoctorHandoffView.tsx      # Standardized SOAP note & physician sign-off
 │   ├── data/
 │   │   └── clinicalScenarios.ts       # Clinical test cases & prompt presets
 │   ├── types/
 │   │   └── clinical.ts                # TypeScript clinical data models & schemas
 │   ├── utils/
-│   │   └── speech.ts                  # Web Speech API recognition & speech synthesis
+│   │   ├── liveClient.ts              # Gemini Live API session: mic, playback, tools
+│   │   ├── audio.ts                   # PCM16 encode/decode, capture worklet, playback queue
+│   │   └── toolSummary.ts             # Human-readable tool-call badge text
 │   ├── App.tsx                        # Main state orchestrator
 │   ├── index.css                      # NSOffice glass UI tokens & DM Sans configuration
 │   └── main.tsx                       # React application root
@@ -126,6 +193,11 @@ Click any scenario at the top of the conversation stream to simulate the patient
 
 ## 🔒 Security & Privacy
 
-- All Gemini API calls are executed strictly server-side in `server.ts`.
-- The Gemini API key is never exposed to the client or browser bundle.
-- Meets medical confidentiality standards with mock or local synthetic patient telemetry.
+- `GEMINI_API_KEY` never reaches the browser. The Live API needs a direct
+  WebSocket from the client, so `POST /api/live/token` mints a **single-use
+  ephemeral token** (2-minute window to connect, 30-minute session cap) with the
+  model, system instruction and clinical tool declarations locked in server-side.
+  The browser can speak to the session but cannot change its clinical behaviour.
+- The turn-based SOAP synthesis call runs entirely server-side in `server.ts`.
+- If the key is missing or a call fails, the UI shows the error. It never
+  substitutes invented clinical content for a real model response.

@@ -1,17 +1,27 @@
 import React, { useEffect, useRef } from 'react';
+import { token } from '../utils/theme';
 
 interface VoiceVisualizerProps {
   isListening: boolean;
   isSpeaking: boolean;
   isProcessing: boolean;
+  /** Real microphone peak (0-1) from the Live API capture worklet. */
+  micLevel: number;
 }
 
 export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({
   isListening,
   isSpeaking,
   isProcessing,
+  micLevel,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // The level updates ~8x/second; hold it in a ref so new values reach the
+  // animation loop without tearing it down and restarting it each time.
+  const levelRef = useRef(0);
+  const smoothedRef = useRef(0);
+  levelRef.current = micLevel;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -37,7 +47,10 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({
       ctx.lineTo(width, centerY);
       ctx.stroke();
 
-      const active = isListening || isSpeaking || isProcessing;
+      // Ease toward the incoming peak so the bars glide instead of stepping.
+      smoothedRef.current += (levelRef.current - smoothedRef.current) * 0.25;
+      const level = Math.min(1, smoothedRef.current * 2.2);
+
       const barCount = 32;
       const spacing = width / barCount;
 
@@ -46,10 +59,10 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({
         let barHeight = 4;
 
         if (isListening) {
-          // Responsive microphone waveform simulation
+          // Driven by the actual microphone signal, shaped into a waveform.
           const freq = (i / barCount) * Math.PI * 4;
-          const amp = Math.sin(freq + phase) * Math.cos(phase * 1.5);
-          barHeight = Math.max(6, Math.abs(amp) * 38 + Math.random() * 12);
+          const envelope = Math.abs(Math.sin(freq + phase));
+          barHeight = Math.max(4, 4 + envelope * level * 44);
         } else if (isSpeaking) {
           // Assistant vocal output wave
           const freq = (i / barCount) * Math.PI * 2.5;
@@ -65,19 +78,19 @@ export const VoiceVisualizer: React.FC<VoiceVisualizerProps> = ({
           barHeight = 4 + Math.sin(phase + i * 0.2) * 2;
         }
 
-        // Color styling: Electric blue
+        // Electric Blue is the single accent; states differ by intensity.
         ctx.beginPath();
         if (isSpeaking) {
-          ctx.strokeStyle = '#0062FF';
-          ctx.shadowColor = '#0062FF';
+          ctx.strokeStyle = token('--color-accent');
+          ctx.shadowColor = token('--color-accent');
           ctx.shadowBlur = 10;
         } else if (isListening) {
-          ctx.strokeStyle = '#38BDF8';
-          ctx.shadowColor = '#38BDF8';
+          ctx.strokeStyle = token('--color-accent-tint');
+          ctx.shadowColor = token('--color-accent');
           ctx.shadowBlur = 12;
         } else if (isProcessing) {
-          ctx.strokeStyle = '#818CF8';
-          ctx.shadowColor = '#818CF8';
+          ctx.strokeStyle = token('--color-accent');
+          ctx.shadowColor = token('--color-accent');
           ctx.shadowBlur = 8;
         } else {
           ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';

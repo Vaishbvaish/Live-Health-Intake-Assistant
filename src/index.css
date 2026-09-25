@@ -1,22 +1,75 @@
 @import "tailwindcss";
 
-@layer base {
-  :root {
-    --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    --font-mono: 'JetBrains Mono', monospace;
-    --color-electric-blue: #0062FF;
-    --color-electric-blue-glow: rgba(0, 98, 255, 0.35);
-  }
+/**
+ * NSOffice glass UI system
+ * ────────────────────────
+ * Electric Blue (#0062FF) is the one accent colour: every interactive,
+ * branded or emphasised element uses it and nothing else.
+ *
+ * The two status colours below are deliberately NOT accents. They are signal,
+ * never style: `critical` and `caution` mark clinical severity (red-flag
+ * findings, triage urgency, high symptom scores, allergy warnings) and
+ * system failure. A routine/low-severity state is Electric Blue, because
+ * "nothing is wrong" is not a warning. Status colours are never used on
+ * buttons, tabs, links, focus rings, success ticks or any other chrome.
+ * They are Apple's dark-mode system colours, so they sit correctly next to
+ * Electric Blue.
+ *
+ * Neutrals are a single ink ramp. Nothing in the app should reference a raw
+ * Tailwind palette colour (slate-400, rose-500, …) — use these tokens.
+ */
+@theme {
+  /* Typeface */
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
+  /* Brand accent — the one accent colour */
+  --color-accent: #0062FF;
+  --color-accent-hover: #0052E0;
+  --color-accent-deep: #0048C4;
+  --color-accent-tint: #7FB0FF;
+
+  /* Surfaces */
+  --color-canvas: #07090E;
+  --color-surface: #101622;
+  --color-surface-raised: #121824;
+  --color-surface-sunken: #1A2333;
+  --color-hairline: rgba(255, 255, 255, 0.08);
+  --color-hairline-strong: #2A364E;
+
+  /* Ink ramp (neutral text) */
+  --color-ink: #E8ECF2;
+  --color-ink-muted: #CBD5E1;
+  --color-ink-soft: #94A3B8;
+  --color-ink-dim: #64748B;
+  --color-ink-faint: #475569;
+
+  /* Clinical + failure signal — semantic only, never used as an accent */
+  --color-critical: #FF453A;
+  --color-caution: #FF9F0A;
+
+  /* Apple-style 4pt rhythm */
+  --radius-panel: 1rem;
+  --radius-control: 0.75rem;
+}
+
+@layer base {
   body {
     font-family: var(--font-sans);
-    background-color: #07090E;
-    color: #E8ECF2;
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* One visible focus treatment, in the accent colour. */
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
 }
 
-/* NSOffice Liquid Glass UI utility classes */
+/* ── Liquid glass surfaces ────────────────────────────────────────────── */
 .glass-panel {
   background: rgba(14, 18, 27, 0.72);
   backdrop-filter: blur(20px);
@@ -51,7 +104,43 @@
   border-color: rgba(0, 98, 255, 0.5);
 }
 
-/* Smooth custom scrollbars for clinical data */
+/* ── Action hierarchy ─────────────────────────────────────────────────────
+ * Exactly one .ns-btn-primary is visible per view at any moment; everything
+ * else is secondary or ghost. Both share a footprint so promoting a control
+ * from secondary to primary does not shift the layout.
+ */
+.ns-btn-primary {
+  background: var(--color-accent);
+  color: #fff;
+  border: 1px solid var(--color-accent);
+  box-shadow: 0 8px 24px -8px rgba(0, 98, 255, 0.65);
+}
+.ns-btn-primary:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+}
+
+.ns-btn-secondary {
+  background: rgba(0, 98, 255, 0.1);
+  color: var(--color-accent-tint);
+  border: 1px solid rgba(0, 98, 255, 0.35);
+}
+.ns-btn-secondary:hover:not(:disabled) {
+  background: rgba(0, 98, 255, 0.18);
+  color: #fff;
+}
+
+.ns-btn-ghost {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--color-ink-muted);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.ns-btn-ghost:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────────────── */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
