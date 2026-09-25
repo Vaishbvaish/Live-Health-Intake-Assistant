@@ -1,22 +1,22 @@
-
-
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { ServiceError, createLiveToken } from '../../lib/clinical.js';
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
+  res.setHeader('Cache-Control', 'no-store');
+
   try {
-    const payload = await createLiveToken();
-    return Response.json(payload, {
-      headers: { 'Cache-Control': 'no-store' },
-    });
+    res.status(200).json(await createLiveToken());
   } catch (error) {
     if (error instanceof ServiceError) {
-      return Response.json({ error: error.message }, { status: error.status });
+      res.status(error.status).json({ error: error.message });
+      return;
     }
     console.error('Failed to mint Live API token:', error);
-    return Response.json({ error: 'Could not mint a Live API ephemeral token.' }, { status: 502 });
+    res.status(502).json({ error: 'Could not mint a Live API ephemeral token.' });
   }
 }

@@ -1,27 +1,35 @@
-
-
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { ServiceError, generateHandoff, type HandoffRequest } from '../../lib/clinical.js';
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== 'POST') {
-    return Response.json({ error: 'Method not allowed' }, { status: 405 });
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
   }
 
   let body: HandoffRequest;
-  try {
-    body = (await request.json()) as HandoffRequest;
-  } catch {
-    return Response.json({ error: 'Expected a JSON body.' }, { status: 400 });
+  if (typeof req.body === 'string') {
+    try {
+      body = JSON.parse(req.body) as HandoffRequest;
+    } catch {
+      res.status(400).json({ error: 'Expected a JSON body.' });
+      return;
+    }
+  } else if (req.body && typeof req.body === 'object') {
+    body = req.body as HandoffRequest;
+  } else {
+    res.status(400).json({ error: 'Expected a JSON body.' });
+    return;
   }
 
   try {
-    const handoff = await generateHandoff(body);
-    return Response.json({ handoff });
+    res.status(200).json({ handoff: await generateHandoff(body) });
   } catch (error) {
     if (error instanceof ServiceError) {
-      return Response.json({ error: error.message }, { status: error.status });
+      res.status(error.status).json({ error: error.message });
+      return;
     }
     console.error('Error generating handoff:', error);
-    return Response.json({ error: 'Failed to generate handoff.' }, { status: 502 });
+    res.status(502).json({ error: 'Failed to generate handoff.' });
   }
 }

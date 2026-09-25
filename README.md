@@ -136,6 +136,25 @@ lib/clinical.ts         tool declarations + system prompt, shared by both
 > in `vercel.json` to whatever your plan allows. SOAP synthesis usually
 > finishes in 10-20s.
 
+### Checking a deployment
+
+`GET /api/health` answers without calling Gemini, so it separates a runtime
+problem from an upstream one:
+
+```bash
+curl https://<your-app>.vercel.app/api/health
+curl "https://<your-app>.vercel.app/api/health?probe=1"   # also mints a real token
+```
+
+| Result | Meaning |
+| --- | --- |
+| `/api/health` times out | The function runtime itself is failing — check the Vercel function logs. |
+| `keyPresent: false` | `GEMINI_API_KEY` is missing for this environment; add it and redeploy. |
+| `probe: "failed"` | Runtime is fine, the Gemini call is not. `probeError` says why. |
+| `probe: "ok"` | Everything the server does is working. |
+
+No secret is ever returned — only whether a key is present and its length.
+
 ---
 
 ## 🩺 Preloaded Clinical Test Scenarios
