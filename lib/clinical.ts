@@ -1,14 +1,3 @@
-/**
- * Shared clinical brain for both runtimes.
- *
- * Local development runs an Express server (`server.ts`); production runs
- * Vercel serverless functions (`api/`). Both import the tool declarations,
- * system instruction and the two service calls from here, so the clinical
- * behaviour cannot drift between what you test locally and what ships.
- *
- * Nothing here touches HTTP — callers translate ServiceError into a response.
- */
-
 import {
   GoogleGenAI,
   Modality,
@@ -18,31 +7,15 @@ import {
   FunctionDeclaration,
 } from '@google/genai';
 
-/**
- * The real-time voice conversation runs on the Live API model over a
- * WebSocket. The one turn-based step (final SOAP synthesis) uses the
- * general-purpose free-tier model. Both are overridable for testing.
- */
 export const LIVE_MODEL = process.env.GEMINI_LIVE_MODEL || 'gemini-3.1-flash-live-preview';
 export const TEXT_MODEL = process.env.GEMINI_TEXT_MODEL || 'gemini-3-flash-preview';
 
-/** Ephemeral auth tokens are served from v1alpha only. */
 export const LIVE_API_VERSION = 'v1alpha';
 
-/** How long a minted token may still be used to open a new session. */
 export const TOKEN_USABLE_MS = 10 * 60 * 1000;
 
-/**
- * Silence (ms) before the model decides the patient has finished speaking.
- *
- * This is the one knob that directly trades responsiveness against not
- * interrupting people. Lower feels snappier; too low and the assistant talks
- * over a patient who merely paused mid-sentence, which loses clinical detail.
- * 900ms is tuned for people describing symptoms while in discomfort.
- */
 const VAD_SILENCE_MS = Number(process.env.GEMINI_VAD_SILENCE_MS || 900);
 
-/** Carries an HTTP status so each runtime can answer appropriately. */
 export class ServiceError extends Error {
   constructor(
     readonly status: number,
@@ -53,10 +26,6 @@ export class ServiceError extends Error {
   }
 }
 
-/**
- * Read lazily rather than at import time: on Vercel the environment is
- * injected by the platform, and locally `dotenv/config` has to run first.
- */
 export function geminiApiKey(): string {
   return process.env.GEMINI_API_KEY || '';
 }
@@ -73,7 +42,6 @@ function textClient(): GoogleGenAI {
   return textAi;
 }
 
-/** Separate client pinned to v1alpha, used only to mint Live API tokens. */
 function liveAuthClient(): GoogleGenAI {
   if (!liveAuthAi) {
     liveAuthAi = new GoogleGenAI({
@@ -84,7 +52,6 @@ function liveAuthClient(): GoogleGenAI {
   return liveAuthAi;
 }
 
-// Function Declarations for Mid-Conversation Clinical Tool Calling
 export const recordSymptomDeclaration: FunctionDeclaration = {
   name: 'record_symptom',
   description: 'Extract and record a specific symptom described by the patient, including anatomical location, severity, onset, duration, and character.',
@@ -301,7 +268,6 @@ export const clinicalTools = [
   },
 ];
 
-// System prompt enforcing NSOffice medical intake standards and mid-conversation tool calling
 export const CLINICAL_SYSTEM_INSTRUCTION = `You are the NSOffice Live Clinical Health Intake Assistant, an advanced real-time voice medical intake companion powered by the Gemini API.
 
 Your mission:
@@ -328,15 +294,6 @@ CRITICAL BEHAVIOR & GUIDELINES:
    - If there is enough symptom data to form a clinical picture: call 'update_clinical_assessment'.
    - When the patient indicates they are finished, or after covering all essential clinical gaps: call 'generate_doctor_handoff'.
    - You can call MULTIPLE tools in a single turn if multiple pieces of information are shared!`;
-/**
- * Mints a short-lived ephemeral token so the browser can open the Live API
- * WebSocket directly against Gemini.
- *
- * GEMINI_API_KEY never leaves the server. The token is single-use, expires in
- * minutes, and carries the model, system instruction, clinical tool
- * declarations and audio config locked in here — the browser cannot alter the
- * clinical behaviour, it can only speak to it.
- */
 export async function createLiveToken() {
   if (!geminiApiKey()) {
     throw new ServiceError(
@@ -352,42 +309,28 @@ export async function createLiveToken() {
     token = await liveAuthClient().authTokens.create({
       config: {
         uses: 1,
-        // Window to open the socket, then the hard cap on session length.
-        // The client prewarms this token before the user clicks, so the
-        // connect window has to outlive a bit of reading time on the page.
         newSessionExpireTime: new Date(now + TOKEN_USABLE_MS).toISOString(),
         expireTime: new Date(now + 30 * 60 * 1000).toISOString(),
         liveConnectConstraints: {
           model: LIVE_MODEL,
           config: {
             responseModalities: [Modality.AUDIO],
-            // Low, not zero: clinical extraction should be reproducible, but
-            // the spoken bedside manner still needs some variation.
             temperature: 0.2,
             systemInstruction: CLINICAL_SYSTEM_INSTRUCTION,
             tools: clinicalTools,
             speechConfig: {
               voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } },
             },
-            // Drives the on-screen dialogue transcript for both speakers.
             inputAudioTranscription: {},
             outputAudioTranscription: {},
-            // Turn-taking is the single biggest lever on perceived latency:
-            // the model will not start answering until VAD declares the
-            // patient has finished.
             realtimeInputConfig: {
               automaticActivityDetection: {
-                // Start detection stays eager so the first syllable is not
-                // clipped. End detection is deliberately conservative: at
-                // 600ms the model began answering over the top of a patient
-                // who was still describing their symptoms.
                 startOfSpeechSensitivity: StartSensitivity.START_SENSITIVITY_HIGH,
                 endOfSpeechSensitivity: EndSensitivity.END_SENSITIVITY_LOW,
                 prefixPaddingMs: 120,
                 silenceDurationMs: VAD_SILENCE_MS,
               },
             },
-            // Keeps a long intake from slowing down as context grows.
             contextWindowCompression: {
               triggerTokens: '16000',
               slidingWindow: { targetTokens: '8000' },
@@ -419,10 +362,6 @@ export interface HandoffRequest {
   history?: unknown;
 }
 
-/**
- * Compiles the physician SOAP note. Turn-based, so it uses the
- * general-purpose free-tier text model rather than the Live API.
- */
 export async function generateHandoff(body: HandoffRequest) {
   if (!geminiApiKey()) {
     throw new ServiceError(
@@ -468,7 +407,6 @@ export async function generateHandoff(body: HandoffRequest) {
 
   const call = response.functionCalls?.[0];
   if (!call?.args) {
-    // Better to show nothing than to invent clinical content for a physician.
     throw new ServiceError(
       502,
       'The model did not return a structured SOAP note. Please try again.'

@@ -24,7 +24,6 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/[0.08] bg-canvas/80 backdrop-blur-2xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Brand & Title */}
         <div className="flex items-center gap-3.5">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-accent-deep to-accent flex items-center justify-center shadow-lg shadow-accent/20 border border-white/20">
             <Activity className="w-5 h-5 text-white" />
@@ -41,7 +40,6 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Live Session Status */}
         <div className="hidden md:flex items-center gap-4 text-xs font-medium text-ink-soft">
           <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.06]">
             <span className="w-2 h-2 rounded-full bg-accent animate-pulse" />
@@ -63,7 +61,6 @@ export const Header: React.FC<HeaderProps> = ({
           )}
         </div>
 
-        {/* View Switcher / Primary Action */}
         <div className="flex items-center gap-2">
           <div className="flex items-center p-1 rounded-xl bg-white/[0.04] border border-white/[0.08]">
             <button

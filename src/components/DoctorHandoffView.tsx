@@ -129,7 +129,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
 
   return (
     <div className="max-w-5xl mx-auto py-6 px-4 sm:px-6 space-y-6">
-      {/* Top Navigation & Actions Bar */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <button
           onClick={onReturnToIntake}
@@ -165,7 +164,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
             <span>Print / Export PDF</span>
           </button>
 
-          {/* Primary Action */}
           <button
             onClick={() => setDoctorSignedOff(!doctorSignedOff)}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all ${
@@ -178,12 +176,9 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
         </div>
       </div>
 
-      {/* Main Glass Document Container */}
       <div className="glass-panel p-6 sm:p-8 rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden">
-        {/* Decorative corner glow */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-accent/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* Header Clinical Metadata */}
         <div className="border-b border-white/[0.08] pb-6 mb-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -204,7 +199,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
               </p>
             </div>
 
-            {/* Triage Urgency Badge */}
             <div
               className={`px-4 py-2 rounded-xl border text-xs font-bold flex items-center gap-2 ${
                 isEmergency
@@ -220,7 +214,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
           </div>
         </div>
 
-        {/* Chief Complaint Banner */}
         <div className="p-4 rounded-2xl bg-accent/10 border border-accent/30 mb-6">
           <div className="text-[11px] font-bold text-accent-tint uppercase tracking-wider mb-1">
             Chief Complaint
@@ -230,7 +223,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
           </div>
         </div>
 
-        {/* Red Flags Alert Box */}
         {handoff.redFlagsSummary && handoff.redFlagsSummary.length > 0 && (
           <div className="p-4 rounded-2xl bg-critical/10 border border-critical/30 mb-6 space-y-2">
             <div className="flex items-center gap-2 text-xs font-bold text-critical uppercase tracking-wider">
@@ -247,7 +239,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
           </div>
         )}
 
-        {/* HPI - History of Present Illness Narrative */}
         <div className="mb-6">
           <h3 className="text-xs font-bold uppercase tracking-wider text-ink-soft mb-2 flex items-center gap-2">
             <ClipboardList className="w-4 h-4 text-accent" />
@@ -258,9 +249,7 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
           </div>
         </div>
 
-        {/* Standardized SOAP Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          {/* S - Subjective */}
           <div className="p-4 rounded-2xl bg-surface border border-white/[0.08] space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-lg bg-accent/20 text-accent font-mono font-bold text-xs flex items-center justify-center">
@@ -275,7 +264,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
             </p>
           </div>
 
-          {/* O - Objective */}
           <div className="p-4 rounded-2xl bg-surface border border-white/[0.08] space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-lg bg-accent/20 text-accent font-mono font-bold text-xs flex items-center justify-center">
@@ -290,7 +278,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
             </p>
           </div>
 
-          {/* A - Assessment */}
           <div className="p-4 rounded-2xl bg-surface border border-white/[0.08] space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-lg bg-accent/20 text-accent font-mono font-bold text-xs flex items-center justify-center">
@@ -305,7 +292,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
             </p>
           </div>
 
-          {/* P - Plan */}
           <div className="p-4 rounded-2xl bg-surface border border-white/[0.08] space-y-2">
             <div className="flex items-center gap-2">
               <span className="w-6 h-6 rounded-lg bg-accent/20 text-accent font-mono font-bold text-xs flex items-center justify-center">
@@ -321,9 +307,7 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
           </div>
         </div>
 
-        {/* Suggested Diagnostic Orders & Doctor Checklist */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/[0.06]">
-          {/* Diagnostic Orders */}
           <div>
             <h4 className="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-2">
               <Stethoscope className="w-4 h-4 text-accent" />
@@ -346,7 +330,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
             </div>
           </div>
 
-          {/* Patient Safety & Medical Profile */}
           <div>
             <h4 className="text-xs font-bold text-ink-muted uppercase tracking-wider mb-2 flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 text-accent" />
@@ -375,7 +358,6 @@ ${handoff.redFlagsSummary.length > 0 ? handoff.redFlagsSummary.map((rf) => `! ${
           </div>
         </div>
 
-        {/* Doctor Sign-off Status Footer */}
         <div className="mt-8 pt-4 border-t border-white/[0.08] flex items-center justify-between text-xs text-ink-dim">
           <div className="flex items-center gap-2 font-mono text-[11px]">
             <span>Verified by NSOffice AI Studio</span>

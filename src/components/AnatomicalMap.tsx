@@ -50,7 +50,6 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           </radialGradient>
         </defs>
 
-        {/* Head */}
         <g
           onClick={() => onSelectLocation?.('head')}
           className="transition-all duration-300 hover:opacity-90"
@@ -69,7 +68,6 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           )}
         </g>
 
-        {/* Neck */}
         <g
           onClick={() => onSelectLocation?.('neck')}
           className="transition-all duration-300"
@@ -87,7 +85,6 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           />
         </g>
 
-        {/* Chest & Thorax */}
         <g
           onClick={() => onSelectLocation?.('chest')}
           className="transition-all duration-300"
@@ -105,7 +102,6 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           )}
         </g>
 
-        {/* Abdomen & Pelvis */}
         <g
           onClick={() => onSelectLocation?.('abdomen')}
           className="transition-all duration-300"
@@ -119,7 +115,6 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           />
         </g>
 
-        {/* Pelvis / Groin */}
         <g
           onClick={() => onSelectLocation?.('pelvis')}
           className="transition-all duration-300"
@@ -133,7 +128,6 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           />
         </g>
 
-        {/* Left Arm & Shoulder */}
         <g
           onClick={() => onSelectLocation?.('limbs')}
           className="transition-all duration-300"
@@ -147,7 +141,6 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           />
         </g>
 
-        {/* Right Arm & Shoulder */}
         <g
           onClick={() => onSelectLocation?.('limbs')}
           className="transition-all duration-300"
@@ -161,7 +154,6 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           />
         </g>
 
-        {/* Left Leg */}
         <g
           onClick={() => onSelectLocation?.('limbs')}
           className="transition-all duration-300"
@@ -175,7 +167,6 @@ export const AnatomicalMap: React.FC<AnatomicalMapProps> = ({
           />
         </g>
 
-        {/* Right Leg */}
         <g
           onClick={() => onSelectLocation?.('limbs')}
           className="transition-all duration-300"

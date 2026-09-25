@@ -1,13 +1,6 @@
-/**
- * POST /api/live/token — Vercel serverless function.
- *
- * Hands the browser a single-use ephemeral token so it can open the Live API
- * WebSocket directly. This is why the app can live on Vercel at all: the
- * realtime connection is browser-to-Gemini, so nothing here has to stay
- * running between requests.
- */
 
-import { ServiceError, createLiveToken } from '../../lib/clinical';
+
+import { ServiceError, createLiveToken } from '../../lib/clinical.js';
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== 'POST') {
@@ -17,7 +10,6 @@ export default async function handler(request: Request): Promise<Response> {
   try {
     const payload = await createLiveToken();
     return Response.json(payload, {
-      // A single-use credential must never be cached by a CDN or a browser.
       headers: { 'Cache-Control': 'no-store' },
     });
   } catch (error) {

@@ -1,15 +1,4 @@
-/**
- * Gemini Live API session for the health intake conversation.
- *
- * This is a genuine audio-to-audio dialogue over the Live API WebSocket, not
- * speech-to-text feeding a text model. The browser streams microphone PCM to
- * `gemini-3.1-flash-live-preview`, the model streams speech back, and it calls
- * the clinical tools mid-utterance while the patient is still talking.
- *
- * The browser never sees GEMINI_API_KEY. `/api/live/token` mints a short-lived,
- * single-use ephemeral token with the model, system instruction and tool
- * declarations locked in server-side, and the browser connects with that.
- */
+
 
 import { GoogleGenAI, type FunctionCall, type LiveServerMessage, type Session } from '@google/genai';
 import {
@@ -23,21 +12,21 @@ import {
 export type LiveStatus = 'idle' | 'connecting' | 'live' | 'closed' | 'error';
 
 export interface LiveIntakeCallbacks {
-  /** Connection lifecycle, for the UI status pill. */
+  
   onStatus: (status: LiveStatus) => void;
-  /** Patient speech, transcribed by the Live API itself. */
+  
   onUserTranscript: (text: string, isFinal: boolean) => void;
-  /** Assistant speech, transcribed as it is spoken. */
+  
   onAssistantTranscript: (text: string, isFinal: boolean) => void;
-  /** Mid-conversation clinical tool calls. */
+  
   onToolCalls: (calls: FunctionCall[]) => void;
-  /** True while model audio is actually coming out of the speakers. */
+  
   onSpeakingChange: (speaking: boolean) => void;
-  /** False when the session is running text-only because the mic was refused. */
+  
   onMicState: (active: boolean) => void;
-  /** Live microphone peak, drives the waveform visualizer. */
+  
   onLevel: (level: number) => void;
-  /** Surfaced to the user verbatim — failures must never be silent here. */
+  
   onError: (message: string) => void;
 }
 
@@ -45,23 +34,15 @@ interface TokenResponse {
   token: string;
   model: string;
   apiVersion: string;
-  /** Epoch ms after which this token can no longer open a new session. */
+  
   usableUntil: number;
 }
 
-/**
- * Minting a token costs a round-trip to Gemini (~0.6-0.8s) and used to sit on
- * the critical path between the click and the socket opening. It depends on
- * nothing the user does, so it is fetched ahead of time — on mount and again
- * when the pointer reaches the microphone button — and consumed on click.
- *
- * Tokens are single-use, so the cache holds at most one and is cleared the
- * moment it is handed out.
- */
+
 let pending: Promise<TokenResponse> | null = null;
 let cached: TokenResponse | null = null;
 
-/** Safety margin so a token cannot expire mid-handshake. */
+
 const TOKEN_GUARD_MS = 20_000;
 
 async function fetchToken(): Promise<TokenResponse> {
@@ -88,10 +69,7 @@ async function fetchToken(): Promise<TokenResponse> {
   };
 }
 
-/**
- * Warms the token cache. Safe to call repeatedly and safe to ignore — a
- * failure here just means the click path fetches one itself.
- */
+
 export function prewarmLiveToken(): void {
   if (pending) return;
   if (cached && cached.usableUntil - Date.now() > TOKEN_GUARD_MS) return;
@@ -109,8 +87,6 @@ export function prewarmLiveToken(): void {
       pending = null;
     });
 
-  // Nothing awaits a prewarm; swallow so it never surfaces as an unhandled
-  // rejection. The real error is raised again if the click path needs one.
   pending.catch(() => undefined);
 }
 
@@ -127,7 +103,6 @@ export class LiveIntakeSession {
   private status: LiveStatus = 'idle';
   private speaking = false;
 
-  // Transcripts stream in fragments; accumulate until the turn closes.
   private userTurn = '';
   private assistantTurn = '';
 
@@ -151,26 +126,12 @@ export class LiveIntakeSession {
     this.callbacks.onSpeakingChange(speaking);
   }
 
-  /**
-   * Opens the microphone and the Live API socket. Must be called from a user
-   * gesture so the browser lets us start audio.
-   */
+  
   async start(): Promise<void> {
     if (this.status === 'connecting' || this.status === 'live') return;
     this.setStatus('connecting');
 
     try {
-      // Microphone and token are independent, so race them instead of
-      // chaining: the permission grant and the round-trip to Gemini overlap,
-      // which takes ~0.5s off every session start.
-      //
-      // A mic refusal is not fatal: reviewers without a working mic can still
-      // type or run a preset scenario against the same live session.
-      // The socket does not need the microphone, so it must not wait for it.
-      // Opening the mic costs ~0.5-1.0s; the handshake costs ~1.3s. Run them
-      // together and the session is ready roughly a second sooner. Captured
-      // frames are dropped until the status flips to 'live', so there is no
-      // race between the two.
       void this.startMicrophone().then(
         () => {
           this.callbacks.onMicState(true);
@@ -195,13 +156,9 @@ export class LiveIntakeSession {
         httpOptions: { apiVersion },
       });
 
-      // Model config (system instruction, tools, voice, transcription) is
-      // locked into the token server-side, so nothing clinical is passed here.
       this.session = await ai.live.connect({
         model,
         callbacks: {
-          // Deliberately not 'live' yet: the socket accepts turns only after
-          // setupComplete, and anything sent before it is silently dropped.
           onopen: () => undefined,
           onmessage: (message) => this.handleMessage(message),
           onerror: (event) => {
@@ -225,11 +182,11 @@ export class LiveIntakeSession {
     }
   }
 
-  /** Takes the prewarmed token if one is ready, otherwise fetches now. */
+  
   private async mintToken(): Promise<TokenResponse> {
     if (cached && cached.usableUntil - Date.now() > TOKEN_GUARD_MS) {
       const token = cached;
-      cached = null; // single-use
+      cached = null;
       return token;
     }
 
@@ -239,7 +196,6 @@ export class LiveIntakeSession {
         cached = null;
         if (token.usableUntil - Date.now() > TOKEN_GUARD_MS) return token;
       } catch {
-        // Fall through to a fresh fetch below.
       }
     }
 
@@ -256,7 +212,6 @@ export class LiveIntakeSession {
       },
     });
 
-    // Pinning the context to 16 kHz lets the browser resample the mic for us.
     this.micContext = new AudioContext({ sampleRate: LIVE_INPUT_SAMPLE_RATE });
     if (this.micContext.state === 'suspended') {
       await this.micContext.resume();
@@ -271,7 +226,6 @@ export class LiveIntakeSession {
       const { samples, level } = event.data as { samples: Float32Array; level: number };
       this.callbacks.onLevel(level);
 
-      // The socket only accepts input after setupComplete.
       if (!this.session || this.status !== 'live') return;
       this.session.sendRealtimeInput({
         audio: {
@@ -282,7 +236,6 @@ export class LiveIntakeSession {
     };
 
     this.micSource.connect(this.micNode);
-    // Worklet has no output; keep it pulled by the graph without audible echo.
     this.micNode.connect(this.micContext.destination);
   }
 
@@ -293,8 +246,6 @@ export class LiveIntakeSession {
 
     const content = message.serverContent;
 
-    // Barge-in: the model stops generating the moment the patient speaks over
-    // it, so drop whatever is still queued for playback.
     if (content?.interrupted) {
       this.player.stop();
       this.setSpeaking(false);
@@ -333,14 +284,12 @@ export class LiveIntakeSession {
       this.handleToolCalls(message.toolCall.functionCalls);
     }
 
-    // A turn can finish generating without `turnComplete` ever arriving, so
-    // commit on either signal or the spoken text never leaves the live bubble.
     if (content?.generationComplete || content?.turnComplete) {
       this.flushTurns();
     }
   }
 
-  /** Moves the in-flight transcripts into the committed conversation log. */
+  
   private flushTurns(): void {
     if (this.userTurn.trim()) {
       this.callbacks.onUserTranscript(this.userTurn.trim(), true);
@@ -352,11 +301,7 @@ export class LiveIntakeSession {
     }
   }
 
-  /**
-   * The clinical tools are recorders, not lookups — they push structured data
-   * into the dashboard. Each one still needs a response or the model stalls
-   * waiting on it mid-conversation.
-   */
+  
   private handleToolCalls(calls: FunctionCall[]): void {
     this.callbacks.onToolCalls(calls);
 
@@ -369,7 +314,7 @@ export class LiveIntakeSession {
     });
   }
 
-  /** Sends a typed message or a preset scenario as a complete patient turn. */
+  
   sendText(text: string): void {
     if (!this.session) return;
     this.player.stop();
@@ -380,7 +325,7 @@ export class LiveIntakeSession {
     });
   }
 
-  /** Manual barge-in from the stop button. */
+  
   interrupt(): void {
     this.player.stop();
     this.setSpeaking(false);
@@ -393,12 +338,10 @@ export class LiveIntakeSession {
       try {
         this.session.close();
       } catch {
-        // Socket already gone.
       }
       this.session = null;
     }
 
-    // Don't lose a half-finished exchange when the patient ends the session.
     this.flushTurns();
     this.setSpeaking(false);
 

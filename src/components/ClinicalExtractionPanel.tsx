@@ -76,7 +76,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
 
   return (
     <div className="flex flex-col h-full rounded-2xl glass-panel border border-white/[0.08] overflow-hidden">
-      {/* Panel Header */}
       <div className="p-4 border-b border-white/[0.06] bg-canvas/60 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Activity className="w-4 h-4 text-accent" />
@@ -91,7 +90,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Triage Urgency Level Card */}
         <div className={`p-3.5 rounded-2xl border ${triageInfo.bg} transition-all`}>
           <div className="flex items-center justify-between mb-1.5">
             <div className="flex items-center gap-2">
@@ -105,7 +103,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
           <p className="text-xs opacity-90 leading-relaxed">{triageInfo.desc}</p>
         </div>
 
-        {/* Anatomical Spatial Mapping */}
         <AnatomicalMap
           activeLocations={activeLocations}
           hasEmergency={triageLevel === 'emergency'}
@@ -113,7 +110,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
           onSelectLocation={(loc) => setSelectedLocation(loc === selectedLocation ? null : loc)}
         />
 
-        {/* Active Red Flag Alerts */}
         {redFlags.length > 0 && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-[11px] font-bold text-critical uppercase tracking-wider">
@@ -143,7 +139,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
           </div>
         )}
 
-        {/* Extracted Symptoms */}
         <div>
           <div className="flex items-center justify-between text-[11px] font-bold text-ink-soft uppercase tracking-wider mb-2">
             <span className="flex items-center gap-1.5">
@@ -173,7 +168,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
                         <span>Onset: {sym.onset}</span>
                       </div>
                     </div>
-                    {/* Severity score */}
                     <div className="flex flex-col items-end">
                       <span className="text-xs font-mono font-bold text-white">
                         {sym.severity}<span className="text-ink-dim text-[10px]">/10</span>
@@ -181,7 +175,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
                     </div>
                   </div>
 
-                  {/* Severity meter */}
                   <div className="w-full h-1.5 bg-surface-raised rounded-full overflow-hidden mb-2">
                     <div
                       className={`h-full rounded-full transition-all duration-500 ${
@@ -195,7 +188,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
                     />
                   </div>
 
-                  {/* Character & Radiation details */}
                   <div className="flex flex-wrap gap-1.5 text-[11px] text-ink-soft">
                     {sym.character && (
                       <span className="px-2 py-0.5 rounded bg-white/[0.04] border border-white/[0.06]">
@@ -219,7 +211,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
           )}
         </div>
 
-        {/* Patient Background & History */}
         <div>
           <div className="flex items-center justify-between text-[11px] font-bold text-ink-soft uppercase tracking-wider mb-2">
             <span className="flex items-center gap-1.5">
@@ -229,7 +220,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
           </div>
 
           <div className="p-3 rounded-xl bg-surface border border-white/[0.08] space-y-2.5 text-xs">
-            {/* Allergies */}
             <div>
               <div className="text-[10px] font-semibold text-critical uppercase tracking-wider mb-1">
                 Known Drug Allergies:
@@ -250,7 +240,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
               )}
             </div>
 
-            {/* Current Medications */}
             <div className="pt-2 border-t border-white/[0.06]">
               <div className="text-[10px] font-semibold text-accent-tint uppercase tracking-wider mb-1">
                 Current Medications:
@@ -271,7 +260,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
               )}
             </div>
 
-            {/* Chronic Conditions */}
             <div className="pt-2 border-t border-white/[0.06]">
               <div className="text-[10px] font-semibold text-ink-soft uppercase tracking-wider mb-1">
                 Past Medical Conditions:
@@ -294,7 +282,6 @@ export const ClinicalExtractionPanel: React.FC<ClinicalExtractionPanelProps> = (
           </div>
         </div>
 
-        {/* Provisional Assessment Differentials */}
         {assessment && (
           <div>
             <div className="flex items-center justify-between text-[11px] font-bold text-ink-soft uppercase tracking-wider mb-2">

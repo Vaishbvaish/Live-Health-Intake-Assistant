@@ -1,12 +1,4 @@
-/**
- * NSOffice Live Health Intake Assistant
- * Built for Network Science Assignment (Project 5: Live Health Intake Assistant)
- *
- * The patient talks to Gemini over a Live API WebSocket — real audio in, real
- * audio out, with barge-in. While they are still speaking, the model calls the
- * clinical tools, and those calls populate the extraction dashboard and the
- * physician SOAP handoff live.
- */
+
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AlertTriangle, X } from 'lucide-react';
@@ -40,7 +32,6 @@ const clockTime = () =>
 export default function App() {
   const [activeView, setActiveView] = useState<'intake' | 'handoff'>('intake');
 
-  // Live session state
   const [status, setStatus] = useState<LiveStatus>('idle');
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [micActive, setMicActive] = useState(false);
@@ -53,11 +44,8 @@ export default function App() {
 
   const sessionRef = useRef<LiveIntakeSession | null>(null);
 
-  // Tool calls usually land before the model finishes speaking, so they are
-  // held here and pinned onto the assistant bubble that reports them.
   const pendingToolCallsRef = useRef<ToolCallExecution[]>([]);
 
-  // Clinical State
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'msg_welcome',
@@ -83,19 +71,16 @@ export default function App() {
 
   const isLive = status === 'live';
 
-  // Session timer only runs while the socket is actually open.
   useEffect(() => {
     if (!isLive) return;
     const timer = setInterval(() => setSessionSeconds((prev) => prev + 1), 1000);
     return () => clearInterval(timer);
   }, [isLive]);
 
-  // Get a token in flight immediately so the click path does not pay for it.
   useEffect(() => {
     prewarmLiveToken();
   }, []);
 
-  // Tear the socket and microphone down if the component goes away.
   useEffect(() => {
     return () => {
       void sessionRef.current?.stop();
@@ -109,19 +94,13 @@ export default function App() {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  /** Triage never de-escalates on its own — only ratchets upward. */
+  
   const escalateTriage = useCallback((level?: TriageUrgency) => {
     if (!level || !(level in URGENCY_RANK)) return;
     setTriageLevel((prev) => (URGENCY_RANK[level] > URGENCY_RANK[prev] ? level : prev));
   }, []);
 
-  /**
-   * Apply mid-conversation tool calls to the dashboard.
-   *
-   * Every update here is a functional setState: these run from Live API socket
-   * callbacks registered once at connect time, so reading component state
-   * directly would read whatever it was when the session opened.
-   */
+  
   const processIncomingToolCalls = useCallback(
     (toolCalls: ToolCallExecution[]) => {
       toolCalls.forEach((tc) => {
@@ -209,7 +188,7 @@ export default function App() {
     [escalateTriage]
   );
 
-  /** Creates the session object and wires the Live API events into React state. */
+  
   const buildSession = useCallback(() => {
     return new LiveIntakeSession({
       onStatus: (next) => {
@@ -283,7 +262,7 @@ export default function App() {
     });
   }, [processIncomingToolCalls]);
 
-  /** Mic button: opens or closes the live voice session. */
+  
   const handleToggleListening = async () => {
     if (isLive || status === 'connecting') {
       await sessionRef.current?.stop();
@@ -299,7 +278,7 @@ export default function App() {
     await session.start();
   };
 
-  /** Typed input and preset scenarios enter the same live session as a turn. */
+  
   const handleSendMessage = (text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -322,7 +301,6 @@ export default function App() {
     sessionRef.current.sendText(trimmed);
   };
 
-  // Compile Doctor Handoff on demand
   const handleGenerateHandoff = async () => {
     setIsProcessing(true);
     setError(null);
@@ -355,12 +333,11 @@ export default function App() {
     handleSendMessage(scenario.initialUtterance);
   };
 
-  /** Manual barge-in — cut the assistant off mid-sentence. */
+  
   const handleStopAudio = () => {
     sessionRef.current?.interrupt();
   };
 
-  // The in-flight assistant turn renders as a live bubble until it is final.
   const visibleMessages: ChatMessage[] = streamingReply
     ? [
         ...messages,
@@ -385,7 +362,6 @@ export default function App() {
         hasHandoff={!!handoff}
       />
 
-      {/* Failures are shown, never silently swapped for canned clinical text. */}
       {error && (
         <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4">
           <div className="flex items-start gap-3 rounded-2xl border border-critical/40 bg-critical/10 px-4 py-3 backdrop-blur-xl">

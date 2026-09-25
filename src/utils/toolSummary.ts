@@ -1,10 +1,3 @@
-/**
- * Human-readable one-liners for the tool-call badges in the dialogue stream.
- *
- * Tool calls now arrive straight from the Live API socket in the browser, so
- * this formatting lives client-side alongside the rest of the session handling.
- */
-
 export function formatToolCallSummary(toolName: string, args: Record<string, any>): string {
   if (!args) return toolName;
 

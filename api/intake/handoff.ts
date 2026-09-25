@@ -1,11 +1,6 @@
-/**
- * POST /api/intake/handoff — Vercel serverless function.
- *
- * Compiles the finalized physician SOAP note from the accumulated intake.
- * Turn-based, so it runs on the general-purpose free-tier text model.
- */
 
-import { ServiceError, generateHandoff, type HandoffRequest } from '../../lib/clinical';
+
+import { ServiceError, generateHandoff, type HandoffRequest } from '../../lib/clinical.js';
 
 export default async function handler(request: Request): Promise<Response> {
   if (request.method !== 'POST') {

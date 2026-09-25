@@ -1,33 +1,8 @@
-/**
- * Raw PCM plumbing for the Gemini Live API audio pipeline.
- *
- * The Live API speaks 16-bit signed little-endian PCM in both directions:
- *   microphone -> model   16 kHz mono  ("audio/pcm;rate=16000")
- *   model -> speaker      24 kHz mono
- *
- * Both rates are fixed by the API, so capture and playback each run in their
- * own AudioContext pinned to the rate they need and let the browser resample.
- */
-
 export const LIVE_INPUT_SAMPLE_RATE = 16000;
 export const LIVE_OUTPUT_SAMPLE_RATE = 24000;
 
-/**
- * Samples per frame posted from the worklet: 512 = 32 ms at 16 kHz.
- *
- * This is pure added latency — the model cannot hear the tail of an utterance
- * until the frame holding it is flushed. 2048 (128 ms) was costing ~96 ms on
- * every turn. 512 is still 4x the 128-sample render quantum, so the
- * postMessage rate stays modest.
- */
 const FRAME_SIZE = 512;
 
-/**
- * AudioWorklet that batches the render quantum (128 frames) into larger chunks
- * before crossing to the main thread, and reports a peak level for the
- * waveform visualizer so it reflects the real microphone rather than an
- * animation.
- */
 const MIC_WORKLET_SOURCE = `
 class MicCaptureProcessor extends AudioWorkletProcessor {
   constructor() {
@@ -61,7 +36,6 @@ registerProcessor('mic-capture', MicCaptureProcessor);
 
 let workletUrl: string | null = null;
 
-/** Registers the capture worklet on a context, compiling it once per page. */
 export async function loadMicWorklet(ctx: AudioContext): Promise<void> {
   if (!workletUrl) {
     workletUrl = URL.createObjectURL(
@@ -71,7 +45,6 @@ export async function loadMicWorklet(ctx: AudioContext): Promise<void> {
   await ctx.audioWorklet.addModule(workletUrl);
 }
 
-/** Float32 [-1, 1] -> little-endian PCM16, base64 encoded for the wire. */
 export function encodePcm16(samples: Float32Array): string {
   const pcm = new Int16Array(samples.length);
   for (let i = 0; i < samples.length; i++) {
@@ -81,19 +54,12 @@ export function encodePcm16(samples: Float32Array): string {
 
   const bytes = new Uint8Array(pcm.buffer);
   let binary = '';
-  // Chunked so a long frame cannot blow the argument limit on fromCharCode.
   for (let i = 0; i < bytes.length; i += 0x8000) {
     binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
   }
   return btoa(binary);
 }
 
-/**
- * base64 PCM16 from the model -> Float32 [-1, 1] ready for an AudioBuffer.
- *
- * Explicitly backed by ArrayBuffer (not ArrayBufferLike) so it satisfies
- * `AudioBuffer.copyToChannel`, which rejects SharedArrayBuffer-backed views.
- */
 export function decodePcm16(base64: string): Float32Array<ArrayBuffer> {
   const binary = atob(base64);
   const bytes = new Uint8Array(binary.length);
@@ -109,14 +75,6 @@ export function decodePcm16(base64: string): Float32Array<ArrayBuffer> {
   return samples;
 }
 
-/**
- * Gap-free playback queue for streamed model audio.
- *
- * Chunks arrive faster than real time, so each one is scheduled against a
- * running cursor instead of "now" — otherwise they would overlap. `stop()`
- * is the barge-in path: it drops everything still queued so the assistant
- * goes quiet the moment the patient talks over it.
- */
 export class PcmPlayer {
   private ctx: AudioContext | null = null;
   private cursor = 0;
@@ -134,7 +92,6 @@ export class PcmPlayer {
     return this.ctx;
   }
 
-  /** Resumes the context; must run inside a user gesture on most browsers. */
   async unlock(): Promise<void> {
     const ctx = this.context();
     if (ctx.state === 'suspended') {
@@ -153,7 +110,6 @@ export class PcmPlayer {
     source.buffer = buffer;
     source.connect(ctx.destination);
 
-    // Never schedule in the past: if the queue drained, restart from now.
     this.cursor = Math.max(this.cursor, ctx.currentTime);
     source.start(this.cursor);
     this.cursor += buffer.duration;
@@ -165,14 +121,12 @@ export class PcmPlayer {
     };
   }
 
-  /** Barge-in: kill queued audio immediately. */
   stop(): void {
     for (const source of this.active) {
       source.onended = null;
       try {
         source.stop();
       } catch {
-        // Already finished — nothing to cancel.
       }
     }
     this.active.clear();

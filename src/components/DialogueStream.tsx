@@ -20,14 +20,14 @@ import { CLINICAL_SCENARIOS, ClinicalScenario } from '../data/clinicalScenarios'
 
 interface DialogueStreamProps {
   messages: ChatMessage[];
-  /** True while the Live API socket is open and the microphone is streaming. */
+  
   isListening: boolean;
   isSpeaking: boolean;
   isProcessing: boolean;
   isConnecting: boolean;
-  /** False when the session is live but running text-only (mic refused). */
+  
   micActive: boolean;
-  /** Live microphone peak (0-1) driving the waveform. */
+  
   micLevel: number;
   interimTranscript: string;
   onToggleListening: () => void;
@@ -35,7 +35,7 @@ interface DialogueStreamProps {
   onSelectScenario: (scenario: ClinicalScenario) => void;
   onGenerateHandoff: () => void;
   onStopAudio: () => void;
-  /** Fired on intent to start, so the token can be fetched before the click. */
+  
   onPrewarm: () => void;
   hasEnoughDataForHandoff: boolean;
 }
@@ -62,8 +62,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
   const [activeScenario, setActiveScenario] = useState<ClinicalScenario | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Compiling the handoff only becomes the primary action once the live
-  // session has ended and there is something to compile.
   const handoffIsPrimary = hasEnoughDataForHandoff && !isListening;
 
   const scrollToBottom = () => {
@@ -92,7 +90,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
 
   return (
     <div className="flex flex-col h-full rounded-2xl glass-panel border border-white/[0.08] overflow-hidden">
-      {/* Top Banner: Voice visualizer & Quick Clinical Scenarios */}
       <div className="p-4 border-b border-white/[0.06] bg-canvas/60">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
@@ -134,7 +131,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
           </div>
         </div>
 
-        {/* Audio Waveform */}
         <VoiceVisualizer
           isListening={isListening}
           isSpeaking={isSpeaking}
@@ -142,7 +138,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
           micLevel={micLevel}
         />
 
-        {/* Quick Scenario Chips for Rehearsal & Evaluation */}
         <div className="mt-3 pt-3 border-t border-white/[0.04]">
           <div className="flex items-center justify-between text-[11px] text-ink-soft mb-2">
             <span className="font-medium">Preloaded Clinical Case Studies:</span>
@@ -168,7 +163,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
             })}
           </div>
 
-          {/* If a scenario is active, show quick follow-up answers for testing */}
           {activeScenario && (
             <div className="mt-2.5 p-2 rounded-xl bg-accent/10 border border-accent/20 text-xs">
               <div className="text-[10px] font-semibold text-accent-tint uppercase tracking-wide mb-1.5 flex items-center justify-between">
@@ -196,7 +190,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
         </div>
       </div>
 
-      {/* Messages Stream */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-ink-soft">
@@ -231,7 +224,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
                 <span className="text-[10px] text-ink-faint font-mono">{msg.timestamp}</span>
               </div>
 
-              {/* Message Bubble */}
               <div
                 className={`group relative p-3.5 rounded-2xl max-w-[85%] sm:max-w-[78%] text-sm leading-relaxed transition-all ${
                   isUser
@@ -241,8 +233,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
               >
                 <div>{msg.content}</div>
 
-                {/* Model audio is streamed once over the socket, so there is
-                    nothing to replay — this is the transcript of what was said. */}
                 {!isUser && (
                   <div className="mt-2 pt-2 border-t border-white/[0.08] flex items-center gap-1.5">
                     <Volume2 className="w-3.5 h-3.5 text-accent" />
@@ -253,7 +243,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
                 )}
               </div>
 
-              {/* Mid-Conversation Tool Calls Badge Display */}
               {msg.toolCalls && msg.toolCalls.length > 0 && (
                 <div className="mt-2 w-full max-w-[85%] sm:max-w-[78%] space-y-1.5">
                   <div className="flex items-center gap-1.5 text-[10px] uppercase tracking-wider font-semibold text-ink-soft px-1">
@@ -310,7 +299,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
                           </div>
                         </div>
 
-                        {/* Expanded Tool Call JSON inspection */}
                         {isExpanded && (
                           <div className="p-3 bg-black/40 border-t border-white/[0.06] font-mono text-[11px] overflow-x-auto text-ink-muted">
                             <div className="text-[10px] text-ink-dim mb-1 uppercase tracking-wider font-sans font-medium">
@@ -330,7 +318,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
           );
         })}
 
-        {/* Interim / Live recognition preview */}
         {isListening && interimTranscript && (
           <div className="flex flex-col items-end">
             <span className="text-[10px] text-accent font-medium mb-1 animate-pulse">
@@ -342,7 +329,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
           </div>
         )}
 
-        {/* Processing State */}
         {isProcessing && (
           <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] text-xs text-ink-soft">
             <div className="w-4 h-4 border-2 border-accent border-t-transparent rounded-full animate-spin" />
@@ -357,11 +343,7 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Primary Action & Controls Bar */}
       <div className="p-4 border-t border-white/[0.08] bg-canvas/80">
-        {/* Exactly one primary action is on screen at a time: start/end the
-            live session while the intake is in progress, then compile the
-            handoff once the session has ended with something to report. */}
         {hasEnoughDataForHandoff && (
           <div className="mb-3">
             <button
@@ -377,7 +359,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
         )}
 
         <form onSubmit={handleSubmit} className="flex items-center gap-2">
-          {/* Opens / closes the Gemini Live API voice session */}
           <button
             type="button"
             onClick={onToggleListening}
@@ -398,7 +379,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
             {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </button>
 
-          {/* Barge-in: cut the assistant off mid-sentence */}
           {isSpeaking && (
             <button
               type="button"
@@ -410,7 +390,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
             </button>
           )}
 
-          {/* Text input for manual or corrected speech */}
           <div className="relative flex-1">
             <input
               type="text"
@@ -426,7 +405,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
             />
           </div>
 
-          {/* Send text button */}
           <button
             type="submit"
             disabled={!inputText.trim() || isProcessing}
@@ -438,7 +416,6 @@ export const DialogueStream: React.FC<DialogueStreamProps> = ({
 
         <div className="flex items-center justify-between text-[11px] text-ink-dim mt-2 px-1">
           <span>Speak naturally or type your responses</span>
-          <span>Apple-style NSOffice Glass Interface</span>
         </div>
       </div>
     </div>

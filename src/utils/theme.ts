@@ -1,12 +1,4 @@
-/**
- * Reads NSOffice design tokens out of CSS.
- *
- * Most of the UI uses Tailwind utilities generated from the `@theme` block in
- * index.css. Two surfaces cannot: the anatomical SVG sets presentation
- * attributes (which do not accept `var()`), and the waveform paints onto a
- * canvas. Both read their colours here so there is still exactly one place
- * where the palette is defined.
- */
+
 
 const FALLBACKS: Record<string, string> = {
   '--color-accent': '#0062FF',
@@ -19,7 +11,7 @@ const FALLBACKS: Record<string, string> = {
 
 const cache = new Map<string, string>();
 
-/** Resolves a CSS custom property to its computed value. */
+
 export function token(name: keyof typeof FALLBACKS | string): string {
   const hit = cache.get(name);
   if (hit) return hit;

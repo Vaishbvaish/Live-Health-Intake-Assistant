@@ -1,6 +1,4 @@
-/**
- * NSOffice Live Health Intake Assistant - Clinical Domain Types
- */
+
 
 export type BodyLocation = 
   | 'head'
@@ -21,9 +19,9 @@ export interface SymptomRecord {
   location: BodyLocation;
   onset: string;
   duration: string;
-  severity: number; // 1 - 10 scale
-  character?: string; // e.g. crushing, throbbing, dull, burning
-  radiation?: string; // e.g. radiating to left arm/jaw
+  severity: number;
+  character?: string;
+  radiation?: string;
   aggravatingOrRelieving?: string;
   extractedAt: string;
 }
@@ -62,7 +60,7 @@ export interface ClinicalAssessment {
 
 export interface DoctorHandoffNote {
   chiefComplaint: string;
-  hpi: string; // History of Present Illness
+  hpi: string;
   soapSubjective: string;
   soapObjective: string;
   soapAssessment: string;

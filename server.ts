@@ -1,18 +1,10 @@
-/**
- * Local development server.
- *
- * Mounts Vite in middleware mode and exposes the same two endpoints that ship
- * as Vercel serverless functions in `api/`. Both call into `lib/clinical.ts`,
- * so local behaviour matches production — this file only handles transport.
- *
- * Production does NOT run this file. See vercel.json.
- */
+
 
 import 'dotenv/config';
 import express, { Request, Response } from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { ServiceError, createLiveToken, generateHandoff } from './lib/clinical';
+import { ServiceError, createLiveToken, generateHandoff } from './lib/clinical.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -22,7 +14,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
 
-/** Mirrors the status/message contract of the serverless handlers. */
+
 function fail(res: Response, error: unknown, fallback: string) {
   if (error instanceof ServiceError) {
     res.status(error.status).json({ error: error.message });
@@ -48,7 +40,6 @@ app.post('/api/intake/handoff', async (req: Request, res: Response) => {
   }
 });
 
-// Mount Vite or serve static assets in production
 async function startServer() {
   if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, 'dist')));
