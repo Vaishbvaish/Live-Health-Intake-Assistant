@@ -294,6 +294,81 @@ CRITICAL BEHAVIOR & GUIDELINES:
    - If there is enough symptom data to form a clinical picture: call 'update_clinical_assessment'.
    - When the patient indicates they are finished, or after covering all essential clinical gaps: call 'generate_doctor_handoff'.
    - You can call MULTIPLE tools in a single turn if multiple pieces of information are shared!`;
+export function describeGeminiError(error: unknown): string {
+  let raw = error instanceof Error ? error.message : String(error);
+  const brace = raw.indexOf('{');
+  if (brace !== -1) {
+    try {
+      const parsed = JSON.parse(raw.slice(brace));
+      const inner = parsed?.error?.message ?? parsed?.message;
+      if (typeof inner === 'string' && inner.trim()) raw = inner.trim();
+    } catch {
+      raw = raw.slice(0, brace).trim() || raw;
+    }
+  }
+  return raw.replace(/\s+/g, ' ').trim();
+}
+
+function isTransient(error: unknown): boolean {
+  const raw = (error instanceof Error ? error.message : String(error)).toLowerCase();
+  return (
+    raw.includes('unavailable') ||
+    raw.includes('high demand') ||
+    raw.includes('overloaded') ||
+    raw.includes('resource_exhausted') ||
+    raw.includes('deadline_exceeded') ||
+    raw.includes('internal') ||
+    raw.includes('econnreset') ||
+    raw.includes('etimedout') ||
+    raw.includes('fetch failed') ||
+    /(429|500|502|503|504)/.test(raw)
+  );
+}
+
+export function asServiceError(error: unknown, action: string): ServiceError {
+  const detail = describeGeminiError(error);
+  const lower = detail.toLowerCase();
+
+  if (lower.includes('unavailable') || lower.includes('high demand') || lower.includes('overloaded')) {
+    return new ServiceError(
+      503,
+      'Gemini is temporarily overloaded and turned the request away. This usually clears in a few seconds — please try again.'
+    );
+  }
+  if (lower.includes('resource_exhausted') || lower.includes('quota') || lower.includes('429')) {
+    return new ServiceError(
+      429,
+      'The Gemini free-tier rate limit has been reached. Wait a minute and try again.'
+    );
+  }
+  if (lower.includes('permission_denied') || lower.includes('api key') || lower.includes('unauthenticated')) {
+    return new ServiceError(401, 'Gemini rejected the API key. Check GEMINI_API_KEY in the server environment.');
+  }
+  return new ServiceError(502, `${action} ${detail || 'The model returned no usable response.'}`);
+}
+
+async function withRetry<T>(budgetMs: number, run: () => Promise<T>): Promise<T> {
+  const deadline = Date.now() + budgetMs;
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const startedAt = Date.now();
+    try {
+      return await run();
+    } catch (error) {
+      lastError = error;
+      if (!isTransient(error)) throw error;
+
+      const attemptMs = Date.now() - startedAt;
+      const backoff = Math.min(1000 * 2 ** attempt, 6000) + Math.floor(Math.random() * 400);
+      if (Date.now() + backoff + attemptMs > deadline) break;
+      await new Promise((resolve) => setTimeout(resolve, backoff));
+    }
+  }
+
+  throw lastError;
+}
+
 export async function createLiveToken() {
   if (!geminiApiKey()) {
     throw new ServiceError(
@@ -306,7 +381,8 @@ export async function createLiveToken() {
 
   let token;
   try {
-    token = await liveAuthClient().authTokens.create({
+    token = await withRetry(12_000, () =>
+      liveAuthClient().authTokens.create({
       config: {
         uses: 1,
         newSessionExpireTime: new Date(now + TOKEN_USABLE_MS).toISOString(),
@@ -337,10 +413,11 @@ export async function createLiveToken() {
             },
           },
         },
-      },
-    });
-  } catch (error: any) {
-    throw new ServiceError(502, error?.message || 'Could not mint a Live API ephemeral token.');
+        },
+      })
+    );
+  } catch (error: unknown) {
+    throw asServiceError(error, 'Could not mint a Live API token.');
   }
 
   if (!token.name) {
@@ -372,6 +449,15 @@ export async function generateHandoff(body: HandoffRequest) {
 
   const { transcript, symptoms, redFlags, history } = body;
 
+  const transcriptTurns = Array.isArray(transcript) ? transcript.length : 0;
+  const symptomCount = Array.isArray(symptoms) ? symptoms.length : 0;
+  if (symptomCount === 0 && transcriptTurns < 2) {
+    throw new ServiceError(
+      400,
+      'There is no intake to compile yet. Start a live session and describe some symptoms first.'
+    );
+  }
+
   const prompt = [
     'Based on the following full preliminary clinical intake consultation:',
     'Transcript:',
@@ -392,17 +478,19 @@ export async function generateHandoff(body: HandoffRequest) {
 
   let response;
   try {
-    response = await textClient().models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      config: {
-        systemInstruction: CLINICAL_SYSTEM_INSTRUCTION,
-        temperature: 0.2,
-        tools: [{ functionDeclarations: [generateDoctorHandoffDeclaration] }],
-      },
-    });
-  } catch (error: any) {
-    throw new ServiceError(502, error?.message || 'Failed to generate handoff.');
+    response = await withRetry(40_000, () =>
+      textClient().models.generateContent({
+        model: TEXT_MODEL,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        config: {
+          systemInstruction: CLINICAL_SYSTEM_INSTRUCTION,
+          temperature: 0.2,
+          tools: [{ functionDeclarations: [generateDoctorHandoffDeclaration] }],
+        },
+      })
+    );
+  } catch (error: unknown) {
+    throw asServiceError(error, 'Could not compile the SOAP note.');
   }
 
   const call = response.functionCalls?.[0];

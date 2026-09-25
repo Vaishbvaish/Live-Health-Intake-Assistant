@@ -29,6 +29,22 @@ const URGENCY_RANK: Record<TriageUrgency, number> = {
 const clockTime = () =>
   new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+function readableError(value: unknown, fallback: string): string {
+  const raw = typeof value === 'string' ? value.trim() : '';
+  if (!raw) return fallback;
+  if (raw.startsWith('{') || raw.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(raw);
+      const inner = parsed?.error?.message ?? parsed?.message;
+      if (typeof inner === 'string' && inner.trim()) return inner.trim();
+    } catch {
+      return fallback;
+    }
+    return fallback;
+  }
+  return raw;
+}
+
 export default function App() {
   const [activeView, setActiveView] = useState<'intake' | 'handoff'>('intake');
 
@@ -314,7 +330,7 @@ export default function App() {
       const data = await response.json();
 
       if (!response.ok || !data.handoff) {
-        setError(data.error || 'Could not generate the SOAP handoff note.');
+        setError(readableError(data?.error, 'Could not generate the SOAP handoff note.'));
         return;
       }
 
@@ -322,7 +338,10 @@ export default function App() {
       setActiveView('handoff');
     } catch (e) {
       setError(
-        e instanceof Error ? e.message : 'Could not reach the server to generate the handoff.'
+        readableError(
+          e instanceof Error ? e.message : '',
+          'Could not reach the server to generate the handoff.'
+        )
       );
     } finally {
       setIsProcessing(false);
